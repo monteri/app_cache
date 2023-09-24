@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    {% load custom_filters %}
+    {% for i in '0123456789'|make_list %}
+        {% with item=data|index:i %}
+            <div style="padding: 0.5rem; border: 1px solid grey; margin: 0.5rem;word-break: break-word;">
+                <div><b>Title:</b> {{ item.title }}</div>
+                <div><b>Description:</b> {{ item.description }}</div>
+            </div>
+        {% endwith %}
+    {% endfor %}
+</body>
+</html>
