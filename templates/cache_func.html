@@ -2,17 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Notes</title>
 </head>
 <body>
-    {% load custom_filters %}
-    {% for i in '0123456789'|make_list %}
-        {% with item=data|index:i %}
+    {% if loading %}
+        <div id="loading-indicator">Loading notes... Please wait.</div>
+    {% else %}
+        <div id="content">
+        {% for note in notes_list %}
             <div style="padding: 0.5rem; border: 1px solid grey; margin: 0.5rem;word-break: break-word;">
-                <div><b>Title:</b> {{ item.title }}</div>
-                <div><b>Description:</b> {{ item.description }}</div>
+                <div><b>Title:</b> {{ note.name }}</div>
+                <div><b>Description:</b> {{ note.description }}</div>
             </div>
-        {% endwith %}
-    {% endfor %}
+        {% endfor %}
+        </div>
+
+
+        <div style="margin-top: 1rem;">
+            <span>Page {{ number }} of {{ num_pages }}.</span>
+            <div>
+                {% if has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ number|add:"-1" }}">previous</a>
+                {% endif %}
+
+                {% if has_next %}
+                    <a href="?page={{ number|add:"1" }}">next</a>
+                    <a href="?page={{ num_pages }}">last &raquo;</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    <script>
+        function loadData() {
+            window.location.reload()
+        }
+
+        {% if loading %}
+            // Set the interval and store the interval ID.
+            setInterval(loadData, 1000);
+        {% endif %}
+    </script>
 </body>
+
 </html>

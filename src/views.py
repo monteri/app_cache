@@ -1,9 +1,11 @@
 import time
-from memoize import memoize, delete_memoized
-from django.shortcuts import render
-from src.models import Note
 
-count = 0
+from django.core.cache import cache
+from django.http import Http404
+from django.shortcuts import render
+
+from src.tasks import cache_page
+
 
 def timer(func):
     def wrapper(*args, **kwargs):
@@ -16,21 +18,34 @@ def timer(func):
     return wrapper
 
 
-@memoize(timeout=60)
-@timer
-def query_func():
+def query_notes(page):
     print("Executing query_func")
-    notes = Note.objects.all()
-    return [{'name': note.name, 'description': note.description, 'id': note.id} for note in notes]
+    cache_key = f'notes_page_{page}'
+    cached_data = cache.get(cache_key)
+
+    if cached_data is None:
+        # Start the task to cache the data
+        cache_page.delay(page)
+        return {"loading": True}
+
+    data = {
+        "loading": False,
+        **cached_data,
+    }
+
+    return data
 
 
-def cached_func(request):
-    global count
-    print(f"Count before: {count}")
-    if count % 3 == 0:
-        print("Deleting memoized")
-        delete_memoized(query_func)
-    notes_list = query_func()
-    print(f"Count after: {count}")
-    count += 1
-    return render(request, 'cache_func.html', {"data": notes_list})
+def get_notes(request):
+    page = request.GET.get('page', 1)
+    print(f'{page=}')
+    try:
+        page = int(page)
+        if page <= 0:
+            raise ValueError("Invalid page number")
+    except ValueError:
+        raise Http404("Invalid page number")
+
+    data = query_notes(page)
+    print(f'{data=}')
+    return render(request, 'cache_func.html', data)
